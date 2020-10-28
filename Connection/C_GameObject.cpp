@@ -1,20 +1,18 @@
 #include "C_GameObject.h"
+#include <iostream>
 
-C_GameObject::C_GameObject()
+C_GameObject::C_GameObject(){}
+
+C_GameObject::C_GameObject(int nID, ObjectType m_type, const struct sockaddr_in pSender)
 {
+	m_id = nID;
+	xPos = yPos = 0.0f;
+	udp_sender = pSender;
+	std::cout << "instantiated with id: " << m_id << std::endl;
 }
 
-C_GameObject::C_GameObject(int nID, char* szName, const struct sockaddr_in pSender)
+C_GameObject::C_GameObject(int nID, ObjectType m_type)
 {
-	m_nID = nID;
-	strcpy_s(m_szName, 256, szName);
-	x = y = 0.0f;
-	sender = pSender;
-}
-
-C_GameObject::C_GameObject(int nID, char* szName)
-{
-	m_nID = nID;
-	strcpy_s(m_szName, 256, szName);
-	x = y = 0.0f;
+	m_id = nID;
+	xPos = yPos = 0.0f;
 }

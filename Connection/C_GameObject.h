@@ -2,16 +2,18 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 
+enum ObjectType {Enemy, Player, Obstacle, Other};
+
 class C_GameObject{
 
 public:
-	int		m_nID;
-	char	m_szName[256];
-	float	x, y;
-	struct sockaddr_in sender;
+	int		m_id;
+	float	xPos, yPos;
+	ObjectType m_type;
+	struct sockaddr_in udp_sender;
 
 public:
 	C_GameObject();
-	C_GameObject(int nID, char* szName, const struct sockaddr_in pSender);
-	C_GameObject(int nID, char* szName);
+	C_GameObject(int nID, ObjectType m_type, const struct sockaddr_in pSender);
+	C_GameObject(int nID, ObjectType m_type);
 };

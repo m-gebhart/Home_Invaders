@@ -12,5 +12,5 @@ class C_TCP_Recv_Thread
 
 public:
 	C_TCP_Recv_Thread(C_TCP_Server* pServer, SOCKET Client);
-	void ThreadProc();
+	void ThreadProcess();
 };

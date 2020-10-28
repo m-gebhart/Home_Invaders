@@ -12,4 +12,5 @@ public:
 
 public:
 	C_GameData();
+	~C_GameData();
 };

@@ -26,6 +26,6 @@ public:
 
 	bool Init(char* szPort, C_GameData* m_data);
 	void ThreadProc();
-	void SendPosition(void);
+	void SendPositions(void);
 	void TimerProc();
 };

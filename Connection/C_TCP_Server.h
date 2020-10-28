@@ -25,6 +25,8 @@ public:
 	~C_TCP_Server();
 
 	bool Init(char* szPort, C_GameData* m_data);
-	void ThreadProc();
-	bool CheckLogin(char* szBuffer);
+	void ThreadProcess();
+	bool CheckPlayerID(char* szBuffer);
+	bool CheckLevelObjects(char* szBuffer);
+	bool CheckPlayerLives(char* szBuffer);
 };
