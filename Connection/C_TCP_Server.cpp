@@ -1,6 +1,6 @@
 #include "C_TCP_Server.h"
 #include "C_GameObject.h"
-#include "C_GameData.h"
+#include "C_Session.h"
 #include "C_TCP_Recv_Thread.h"
 
 C_TCP_Server::C_TCP_Server()
@@ -10,9 +10,9 @@ C_TCP_Server::C_TCP_Server()
 
 C_TCP_Server::~C_TCP_Server(){}
 
-bool C_TCP_Server::Init(char* szPort, C_GameData* m_data)
+bool C_TCP_Server::Init(char* szPort, C_Session* m_data)
 {
-	m_Game = m_data;
+	m_Session = m_data;
 
 	// Get Info
 	struct	addrinfo info;
@@ -70,29 +70,34 @@ void C_TCP_Server::ThreadProcess()
 
 }
 
+bool C_TCP_Server::Login(char* szBuffer)
+{
+	if (m_Session->playerCount < 10)
+		CheckPlayerID(szBuffer);
+	else
+		send(Client, "Error: Login Failed - PlayerLimitReached", 40, 0);
+	return true;
+}
+
 bool C_TCP_Server::CheckPlayerID(char* szBuffer)
 {
 	szBuffer[strlen(szBuffer) - 2] = '\0';
 
-	//10 player limit
 	const std::lock_guard<std::mutex> lock(m_Mutex);
-	m_Game->playerCount++;
-	C_GameObject* pPlayer = new C_GameObject(m_Game->playerCount-1, Player);
-	m_Game->m_list_GameObjects.push_back(pPlayer);
-	m_Game->m_list_Players.push_back(pPlayer);
+	m_Session->playerCount++;
+	C_GameObject* pPlayer = new C_GameObject(m_Session->playerCount - 1, Player);
+	m_Session->m_list_SessionPlayers.push_back(pPlayer);
 	char szID[24];
-	sprintf(szID, "id:%d", m_Game->playerCount-1);
+	sprintf(szID, "id:%d", m_Session->playerCount - 1);
 	send(Client, szID, strlen(szID), 0);
-
 	return true;
 }
+
+
+bool C_TCP_Server::Logout(char* szBuffer) { return true; }
+
 
 bool C_TCP_Server::CheckPlayerLives(char* szBuffer)
-{
-	return true;
-}
-
-bool C_TCP_Server::CheckLevelObjects(char* szBuffer)
 {
 	return true;
 }

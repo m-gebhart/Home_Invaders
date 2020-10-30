@@ -4,7 +4,7 @@
 #include <mutex>
 
 class C_TCP_Recv_Thread;
-class C_GameData;
+class C_Session;
 
 class C_TCP_Server
 {
@@ -18,15 +18,16 @@ class C_TCP_Server
 	bool							m_bRunning;
 	std::list<C_TCP_Recv_Thread*>	m_Threads;
 
-	C_GameData* m_Game;
+	C_Session* m_Session;
 
 public:
 	C_TCP_Server();
 	~C_TCP_Server();
 
-	bool Init(char* szPort, C_GameData* m_data);
+	bool Init(char* szPort, C_Session* m_data);
 	void ThreadProcess();
+	bool Login(char* szBuffer);
 	bool CheckPlayerID(char* szBuffer);
-	bool CheckLevelObjects(char* szBuffer);
 	bool CheckPlayerLives(char* szBuffer);
+	bool Logout(char* szBuffer);
 };

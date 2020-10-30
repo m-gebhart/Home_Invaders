@@ -1,9 +1,10 @@
 #include "C_UDP_Server.h"
 #include "C_GameObject.h"
-#include "C_GameData.h"
+#include "C_Session.h"
 #include <iostream>
 #include <string>
 #include <clocale>
+#include <chrono>
 
 C_UDP_Server::C_UDP_Server(){}
 
@@ -19,15 +20,15 @@ C_UDP_Server::~C_UDP_Server()
 void CALLBACK TimerFunction(UINT wTimerID, UINT msg, DWORD dwUser, DWORD dw1, DWORD dw2)
 {
 	C_UDP_Server* obj = (C_UDP_Server*)dwUser;
-	obj->TimerProc();
+	obj->TimerProcess();
 }
 
-bool C_UDP_Server::Init(char* szPort, C_GameData* m_data)
+bool C_UDP_Server::Init(char* szPort, C_Session* m_data)
 {
 	std::setlocale(LC_NUMERIC, "de_DE.UTF-8");
 
 	// GetInfo
-	m_Game = m_data;
+	m_Session = m_data;
 
 	struct	addrinfo info;
 
@@ -63,7 +64,7 @@ bool C_UDP_Server::Init(char* szPort, C_GameData* m_data)
 	}
 
 	//Receive Thread
-	m_pThread = new std::thread(&C_UDP_Server::ThreadProc, this);
+	m_pThread = new std::thread(&C_UDP_Server::ThreadProcess, this);
 
 
 	TIMECAPS tc;
@@ -84,7 +85,7 @@ bool C_UDP_Server::Init(char* szPort, C_GameData* m_data)
 }
 
 //Receiving...
-void C_UDP_Server::ThreadProc()
+void C_UDP_Server::ThreadProcess()
 {
 	int	 nResult;
 	char szBuffer[256];
@@ -98,7 +99,7 @@ void C_UDP_Server::ThreadProc()
 
 			//id requests
 			if (strstr(szBuffer, "id:") != NULL) {
-				for (i_object = m_Game->m_list_GameObjects.begin(); i_object != m_Game->m_list_GameObjects.end(); ++i_object) {
+				for (i_object = m_Session->m_list_SessionPlayers.begin(); i_object != m_Session->m_list_SessionPlayers.end(); ++i_object) {
 					if (atoi((char*)&szBuffer[3]) == (*i_object)->m_id) {
 						(*i_object)->udp_sender = sender;
 					}
@@ -113,7 +114,7 @@ void C_UDP_Server::ThreadProc()
 				int id = atoi(szFirst + 1);
 
 				//change position for requested id
-				for (i_object = m_Game->m_list_GameObjects.begin(); i_object != m_Game->m_list_GameObjects.end(); ++i_object) {
+				for (i_object = m_Session->m_list_SessionPlayers.begin(); i_object != m_Session->m_list_SessionPlayers.end(); ++i_object) {
 					if (id == (*i_object)->m_id) {
 						szSec++;
 						szFirst = strstr(szSec, ":");
@@ -130,9 +131,10 @@ void C_UDP_Server::ThreadProc()
 }
 
 
-void C_UDP_Server::TimerProc()
+void C_UDP_Server::TimerProcess()
 {
 	SendPositions();
+	SendServerTime();
 }
 
 void C_UDP_Server::SendPositions(void)
@@ -144,12 +146,31 @@ void C_UDP_Server::SendPositions(void)
 	strcpy(szBuffer, "pos:");
 	std::list<C_GameObject*>::iterator	i;
 	const std::lock_guard<std::mutex> lock(m_Mutex);
-	for (i = m_Game->m_list_GameObjects.begin(); i != m_Game->m_list_GameObjects.end(); ++i) {
+	for (i = m_Session->m_list_SessionPlayers.begin(); i != m_Session->m_list_SessionPlayers.end(); ++i) {
 		sprintf_s(szClient, 128, "%d:%.2f:%.2f;", (*i)->m_id, (*i)->xPos, (*i)->yPos);
 		strcat_s(szBuffer, 2048, szClient);
 	}
 
-	for (i = m_Game->m_list_GameObjects.begin(); i != m_Game->m_list_GameObjects.end(); ++i) {
-		sendto(Server, szBuffer, strlen(szBuffer), 0, (struct sockaddr*)&(*i)->udp_sender, sizeof((*i)->udp_sender));
+	SendToAllClients(szBuffer);
+}
+
+void C_UDP_Server::SendServerTime(void)
+{
+	char szBuffer[128];
+
+	//Send in Seconds
+	const std::lock_guard<std::mutex> lock(m_Mutex);
+	m_Session->time_current = std::chrono::high_resolution_clock::now();
+	strcpy(szBuffer, "time:");
+	std::string str = std::to_string(std::chrono::duration_cast<std::chrono::duration<int>>(m_Session->time_current - m_Session->time_start).count());
+	strcat(szBuffer, str.c_str());
+	SendToAllClients(szBuffer);
+}
+
+void C_UDP_Server::SendToAllClients(const char* message)
+{
+	std::list<C_GameObject*>::iterator	client;
+	for (client = m_Session->m_list_SessionPlayers.begin(); client != m_Session->m_list_SessionPlayers.end(); ++client) {
+		sendto(Server, message, strlen(message), 0, (struct sockaddr*)&(*client)->udp_sender, sizeof((*client)->udp_sender));
 	}
 }
