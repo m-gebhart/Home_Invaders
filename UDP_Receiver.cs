@@ -35,7 +35,14 @@ public class UDP_Receiver
 				string returnData = System.Text.Encoding.ASCII.GetString(receiveBytes);
 					
 				//Debug.Log("UDP >> " + returnData);
-				if (returnData.IndexOf("pos") != -1)
+				if (returnData.IndexOf("pos:E") != -1) 
+				{
+					returnData = returnData.Replace("pos:E:", string.Empty);
+					split = returnData.Split(':');
+					UpdateEnemyPosition(float.Parse(split[0], GameManager.culture), float.Parse(split[1], GameManager.culture));
+				}
+
+				else if (returnData.IndexOf("pos") != -1)
 				{
 					returnData = returnData.Replace("pos:", string.Empty);
 					split = returnData.Split(';');
@@ -44,7 +51,7 @@ public class UDP_Receiver
 						//New Player Ghosts
 						String[] id_x_y;
 						id_x_y = split[p].Split(':');
-						UpdatePlayerPosition(int.Parse(id_x_y[0]), 
+							UpdatePlayerPosition(int.Parse(id_x_y[0]), 
 							float.Parse(id_x_y[1], GameManager.culture), 
 							float.Parse(id_x_y[2], GameManager.culture));
 					}
@@ -62,6 +69,15 @@ public class UDP_Receiver
 			}
 		}
 	}
+
+	void UpdateEnemyPosition(float xPos, float yPos)
+    {
+		
+		GameManager.enemy.pos.x = xPos;
+		GameManager.enemy.pos.y = yPos;
+
+	}
+
 
 	void UpdatePlayerPosition(int id, float xPos, float yPos)
 	{

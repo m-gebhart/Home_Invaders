@@ -17,8 +17,8 @@ public class GameManager : MonoBehaviour
 	static Player local = new Player(playerID, 0, 0);
 	public static List<Player> AllPlayers = new List<Player>();
 	public static List<SceneObject> SceneObjects = new List<SceneObject>();
-	static Enemy enemy;
-	public float enemyRange = 6f, enemySpeed = 3.7f;
+	public static Enemy enemy;
+	//public float enemyRange = 6f, enemySpeed = 3.7f;
 	public static CultureInfo culture = (CultureInfo)CultureInfo.CurrentCulture.Clone();
 	UDP_Connection udpConn;
 	TCP_Connection tcpConn;
@@ -32,7 +32,8 @@ public class GameManager : MonoBehaviour
 		if (LocalPlayer == null)
 			LocalPlayer = GameObject.FindWithTag("PlayerLocal");
 
-		SetEnemy();
+		GameManager.enemy = new Enemy(0, 0);
+		enemy.sceneObject = GameObject.FindGameObjectWithTag("Enemy");
 
 		tcpConn.Send("login:"+ playerID);
 		local.pos = Vector3.zero;
@@ -88,17 +89,22 @@ public class GameManager : MonoBehaviour
 			udpConn.Send("pos:" + playerID + ":" + xPos + ":" + yPos + "\r\n");
 	}
 
+	private void SetEnemy() 
+	{
+		GameManager.enemy = new Enemy(0, 0);
+		enemy.sceneObject = GameObject.FindGameObjectWithTag("Enemy");
+	}
+
 	private void MoveEnemy()
 	{
-		Vector3 newPos = Vector3.Lerp(enemy.lowLimit, enemy.highLimit, (Mathf.Sin(GameManager.SessionTimeSeconds)) + 1 * 0.5f);
-		if (enemy.bPosInitialized)
-			enemy.pos = Vector3.MoveTowards(enemy.pos, newPos, Time.fixedDeltaTime * enemy.speed);
-		else
+		Vector3 newPos = new Vector3(GameManager.enemy.pos.x, GameManager.enemy.pos.y, 0);
+		if (!GameManager.enemy.bPosInitialized)
 		{
-			enemy.pos = newPos;
-			enemy.bPosInitialized = true;
+			enemy.sceneObject.transform.position = newPos;
+			GameManager.enemy.bPosInitialized = true;
 		}
-		enemy.sceneObject.transform.position = enemy.pos;
+		else
+			enemy.sceneObject.transform.position = Vector3.Lerp(enemy.sceneObject.transform.position, newPos, 0.05f);
 	}
 
 	void MoveLocalPlayer()
@@ -130,20 +136,6 @@ public class GameManager : MonoBehaviour
 	{
 		p.sceneObject = Instantiate(OtherPlayer, p.pos, Quaternion.identity);
 		(p.sceneObject.GetComponent<SpriteRenderer>()).color = new Color(1, 1, 1, 0.75f);
-	}
-
-	void SetEnemy() 
-	{
-		UnityEngine.Debug.Log(Time.fixedDeltaTime);
-		//Enemy should already be located in the level
-		GameObject levelEnemy = GameObject.FindWithTag("Enemy");
-		if (levelEnemy != null)
-		{
-			enemy = new Enemy(levelEnemy.transform.position.x, levelEnemy.transform.position.y, enemyRange, enemySpeed);
-			if (GameObject.FindGameObjectsWithTag("Enemy").Length != 0)
-				enemy.sceneObject = levelEnemy;
-			SceneObjects.Add(enemy);
-		}
 	}
 
 	void OnApplicationQuit()
