@@ -7,6 +7,7 @@ using System;
 using UnityEngine;
 using UnityEngine.UI;
 using System.Globalization;
+using System.Diagnostics;
 
 public class GameManager : MonoBehaviour
 {
@@ -15,7 +16,9 @@ public class GameManager : MonoBehaviour
 	public GameObject LocalPlayer, OtherPlayer;
 	static Player local = new Player(playerID, 0, 0);
 	public static List<Player> AllPlayers = new List<Player>();
-	public static List<GameObject> LevelObjects = new List<GameObject>();
+	public static List<SceneObject> SceneObjects = new List<SceneObject>();
+	static Enemy enemy;
+	public float enemyRange = 6f, enemySpeed = 3.7f;
 	public static CultureInfo culture = (CultureInfo)CultureInfo.CurrentCulture.Clone();
 	UDP_Connection udpConn;
 	TCP_Connection tcpConn;
@@ -27,10 +30,9 @@ public class GameManager : MonoBehaviour
 		tcpConn = new TCP_Connection("127.0.0.1", 20001, udpConn, LocalPlayer);
 
 		if (LocalPlayer == null)
-			LocalPlayer = GameObject.Find("/Player");
+			LocalPlayer = GameObject.FindWithTag("PlayerLocal");
 
-		/*ENEMY POS HERE*/
-		LevelObjects.Add(GameObject.Find("Enemy"));
+		SetEnemy();
 
 		tcpConn.Send("login:"+ playerID);
 		local.pos = Vector3.zero;
@@ -88,10 +90,15 @@ public class GameManager : MonoBehaviour
 
 	private void MoveEnemy()
 	{
-		foreach (GameObject go in LevelObjects)
+		Vector3 newPos = Vector3.Lerp(enemy.lowLimit, enemy.highLimit, (Mathf.Sin(GameManager.SessionTimeSeconds)) + 1 * 0.5f);
+		if (enemy.bPosInitialized)
+			enemy.pos = Vector3.MoveTowards(enemy.pos, newPos, Time.fixedDeltaTime * enemy.speed);
+		else
 		{
-			//go.transform.position = Mathf.Lerp(go.transform)
+			enemy.pos = newPos;
+			enemy.bPosInitialized = true;
 		}
+		enemy.sceneObject.transform.position = enemy.pos;
 	}
 
 	void MoveLocalPlayer()
@@ -125,6 +132,20 @@ public class GameManager : MonoBehaviour
 		(p.sceneObject.GetComponent<SpriteRenderer>()).color = new Color(1, 1, 1, 0.75f);
 	}
 
+	void SetEnemy() 
+	{
+		UnityEngine.Debug.Log(Time.fixedDeltaTime);
+		//Enemy should already be located in the level
+		GameObject levelEnemy = GameObject.FindWithTag("Enemy");
+		if (levelEnemy != null)
+		{
+			enemy = new Enemy(levelEnemy.transform.position.x, levelEnemy.transform.position.y, enemyRange, enemySpeed);
+			if (GameObject.FindGameObjectsWithTag("Enemy").Length != 0)
+				enemy.sceneObject = levelEnemy;
+			SceneObjects.Add(enemy);
+		}
+	}
+
 	void OnApplicationQuit()
 	{
 		if (udpConn != null)
@@ -132,7 +153,7 @@ public class GameManager : MonoBehaviour
 
 		if (tcpConn != null)
 			tcpConn.Quit();
-		Debug.Log("Quit...");
+		UnityEngine.Debug.Log("Quit...");
 	}
 }
 
