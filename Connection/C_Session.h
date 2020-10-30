@@ -1,6 +1,7 @@
 #include <list>
 #include <chrono>
 
+
 class C_GameObject;
 
 class C_Session {
@@ -11,6 +12,8 @@ public:
 	std::chrono::time_point<std::chrono::high_resolution_clock> time_start;
 	std::chrono::time_point<std::chrono::high_resolution_clock> time_current;
 	std::list<C_GameObject*>	m_list_SessionPlayers;
+	C_GameObject* m_enemy;
+	float time_passed;
 
 public:
 	C_Session();

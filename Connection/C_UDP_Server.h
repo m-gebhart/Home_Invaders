@@ -27,6 +27,10 @@ public:
 	void ThreadProcess();
 	void TimerProcess();
 	void SendPositions(void);
+	void SendEnemyPosition(void);
 	void SendServerTime(void);
+
+private:
+	float Lerp(float a, float b, float t);
 	void SendToAllClients(const char* message);
 };

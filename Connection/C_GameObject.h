@@ -8,7 +8,7 @@ class C_GameObject{
 
 public:
 	int		m_id;
-	float	xPos, yPos;
+	float	xPos, yPos, movementRange = 0.f;
 	ObjectType m_type;
 	struct sockaddr_in udp_sender;
 

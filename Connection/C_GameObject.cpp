@@ -8,11 +8,12 @@ C_GameObject::C_GameObject(int nID, ObjectType m_type, const struct sockaddr_in 
 	m_id = nID;
 	xPos = yPos = 0.0f;
 	udp_sender = pSender;
-	std::cout << "instantiated with id: " << m_id << std::endl;
 }
 
 C_GameObject::C_GameObject(int nID, ObjectType m_type)
 {
 	m_id = nID;
 	xPos = yPos = 0.0f;
+	if (m_type == ObjectType::Enemy)
+		movementRange = 5.f;
 }

@@ -4,6 +4,7 @@
 #include <iostream>
 #include <string>
 #include <clocale>
+#include "math.h"
 #include <chrono>
 
 C_UDP_Server::C_UDP_Server(){}
@@ -133,8 +134,9 @@ void C_UDP_Server::ThreadProcess()
 
 void C_UDP_Server::TimerProcess()
 {
-	SendPositions();
-	SendServerTime();
+	new std::thread(&C_UDP_Server::SendServerTime, this);
+	new std::thread(&C_UDP_Server::SendPositions, this);
+	new std::thread(&C_UDP_Server::SendEnemyPosition, this);
 }
 
 void C_UDP_Server::SendPositions(void)
@@ -145,11 +147,33 @@ void C_UDP_Server::SendPositions(void)
 	szBuffer[0] = '\0';
 	strcpy(szBuffer, "pos:");
 	std::list<C_GameObject*>::iterator	i;
-	const std::lock_guard<std::mutex> lock(m_Mutex);
 	for (i = m_Session->m_list_SessionPlayers.begin(); i != m_Session->m_list_SessionPlayers.end(); ++i) {
 		sprintf_s(szClient, 128, "%d:%.2f:%.2f;", (*i)->m_id, (*i)->xPos, (*i)->yPos);
 		strcat_s(szBuffer, 2048, szClient);
 	}
+
+	SendToAllClients(szBuffer);
+}
+
+float C_UDP_Server::Lerp(float a, float b, float t)
+{
+	return a + t*(b-a);
+}
+
+void C_UDP_Server::SendEnemyPosition(void)
+{
+	char szBuffer[2048];
+	char szClient[128];
+
+	m_Session->m_enemy->xPos = Lerp(
+		-1*(m_Session->m_enemy->movementRange), 
+		m_Session->m_enemy->movementRange, 
+		((sin(m_Session->time_passed)) + 1) * 0.5f);
+
+	szBuffer[0] = '\0';
+	strcpy(szBuffer, "pos:E:");
+	std::list<C_GameObject*>::iterator	i;
+	sprintf_s(szBuffer, 128, "pos:E:%.2f:%.2f", m_Session->m_enemy->xPos, m_Session->m_enemy->yPos);
 
 	SendToAllClients(szBuffer);
 }
@@ -159,16 +183,17 @@ void C_UDP_Server::SendServerTime(void)
 	char szBuffer[128];
 
 	//Send in Seconds
-	const std::lock_guard<std::mutex> lock(m_Mutex);
 	m_Session->time_current = std::chrono::high_resolution_clock::now();
-	strcpy(szBuffer, "time:");
-	std::string str = std::to_string(std::chrono::duration_cast<std::chrono::duration<int>>(m_Session->time_current - m_Session->time_start).count());
-	strcat(szBuffer, str.c_str());
+	m_Session->time_passed = std::chrono::duration_cast<std::chrono::duration<float>>(m_Session->time_current - m_Session->time_start).count();
+	sprintf_s(szBuffer, 128, "time:%.3f", m_Session->time_passed);
+	std::cout << "Server running for " << szBuffer << " seconds" << "\r";
+
 	SendToAllClients(szBuffer);
 }
 
 void C_UDP_Server::SendToAllClients(const char* message)
 {
+	const std::lock_guard<std::mutex> lock(m_Mutex);
 	std::list<C_GameObject*>::iterator	client;
 	for (client = m_Session->m_list_SessionPlayers.begin(); client != m_Session->m_list_SessionPlayers.end(); ++client) {
 		sendto(Server, message, strlen(message), 0, (struct sockaddr*)&(*client)->udp_sender, sizeof((*client)->udp_sender));
