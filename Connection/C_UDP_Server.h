@@ -5,6 +5,7 @@
 #include <list>
 
 class C_Session;
+class C_GameObject;
 
 class C_UDP_Server
 {
@@ -28,9 +29,11 @@ public:
 	void TimerProcess();
 	void SendPositions(void);
 	void SendEnemyPosition(void);
+	void SendProjectilePositions(void);
 	void SendServerTime(void);
 
 private:
-	float Lerp(float a, float b, float t);
 	void SendToAllClients(const char* message);
+	float Lerp(float a, float b, float t);
+	const char* GetDataListAsChar(const char* key, std::list<C_GameObject*> m_list);
 };

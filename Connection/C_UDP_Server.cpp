@@ -2,6 +2,7 @@
 #include "C_GameObject.h"
 #include "C_Session.h"
 #include <iostream>
+#include <list>
 #include <string>
 #include <clocale>
 #include "math.h"
@@ -114,7 +115,7 @@ void C_UDP_Server::ThreadProcess()
 				szSec[0] = '\0';
 				int id = atoi(szFirst + 1);
 
-				//change position for requested id
+				//update position for requested id
 				for (i_object = m_Session->m_list_SessionPlayers.begin(); i_object != m_Session->m_list_SessionPlayers.end(); ++i_object) {
 					if (id == (*i_object)->m_id) {
 						szSec++;
@@ -127,6 +128,22 @@ void C_UDP_Server::ThreadProcess()
 					}
 				}
 			}
+
+			//projectile requests
+			if (strstr(szBuffer, "pro:") != NULL) {
+				char* szFirst = strstr(szBuffer, ":");
+				char* szSec = strstr(szFirst + 1, ":");
+				szSec[0] = '\0';
+				int id = atoi(szFirst + 1);
+
+				C_GameObject* newProjectile = new C_GameObject(id, Projectile);
+				szSec++;
+				szFirst = strstr(szSec, ":");
+				szFirst[0] = '\0';
+				newProjectile->xPos = atof(szSec);
+				newProjectile->yPos = atof(szFirst + 1);
+				m_Session->m_list_Projectiles.push_back(newProjectile);
+			}
 		}
 	}
 }
@@ -137,45 +154,42 @@ void C_UDP_Server::TimerProcess()
 	new std::thread(&C_UDP_Server::SendServerTime, this);
 	new std::thread(&C_UDP_Server::SendPositions, this);
 	new std::thread(&C_UDP_Server::SendEnemyPosition, this);
+	new std::thread(&C_UDP_Server::SendProjectilePositions, this);
 }
 
 void C_UDP_Server::SendPositions(void)
 {
-	char szBuffer[2048];
-	char szClient[128];
-
-	szBuffer[0] = '\0';
-	strcpy(szBuffer, "pos:");
-	std::list<C_GameObject*>::iterator	i;
-	for (i = m_Session->m_list_SessionPlayers.begin(); i != m_Session->m_list_SessionPlayers.end(); ++i) {
-		sprintf_s(szClient, 128, "%d:%.2f:%.2f;", (*i)->m_id, (*i)->xPos, (*i)->yPos);
-		strcat_s(szBuffer, 2048, szClient);
-	}
-
-	SendToAllClients(szBuffer);
-}
-
-float C_UDP_Server::Lerp(float a, float b, float t)
-{
-	return a + t*(b-a);
+	SendToAllClients(GetDataListAsChar("pos:", m_Session->m_list_SessionPlayers));
 }
 
 void C_UDP_Server::SendEnemyPosition(void)
 {
 	char szBuffer[2048];
-	char szClient[128];
 
 	m_Session->m_enemy->xPos = Lerp(
 		-1*(m_Session->m_enemy->movementRange), 
 		m_Session->m_enemy->movementRange, 
-		((sin(m_Session->time_passed)) + 1) * 0.5f);
+		((sin(m_Session->time_passed)) + m_Session->m_enemy->speed) * 0.5f);
 
 	szBuffer[0] = '\0';
 	strcpy(szBuffer, "pos:E:");
-	std::list<C_GameObject*>::iterator	i;
 	sprintf_s(szBuffer, 128, "pos:E:%.2f:%.2f", m_Session->m_enemy->xPos, m_Session->m_enemy->yPos);
 
 	SendToAllClients(szBuffer);
+}
+
+void C_UDP_Server::SendProjectilePositions(void)
+{
+	std::list<C_GameObject*>::iterator	i;
+	for (i = m_Session->m_list_Projectiles.begin(); i != m_Session->m_list_Projectiles.end(); ++i) {
+		if ((*i)->yPos < -10.f)
+		{
+			m_Session->m_list_Projectiles.pop_front();
+			break;
+		}
+		(*i)->yPos -= (*i)->speed*0.1f;
+	}
+	SendToAllClients(GetDataListAsChar("pro:", m_Session->m_list_Projectiles));
 }
 
 void C_UDP_Server::SendServerTime(void)
@@ -198,4 +212,25 @@ void C_UDP_Server::SendToAllClients(const char* message)
 	for (client = m_Session->m_list_SessionPlayers.begin(); client != m_Session->m_list_SessionPlayers.end(); ++client) {
 		sendto(Server, message, strlen(message), 0, (struct sockaddr*)&(*client)->udp_sender, sizeof((*client)->udp_sender));
 	}
+}
+
+
+float C_UDP_Server::Lerp(float a, float b, float t)
+{
+	return a + t * (b - a);
+}
+
+const char* C_UDP_Server::GetDataListAsChar(const char* key, std::list<C_GameObject*> m_list)
+{
+	char szBuffer[2048];
+	char szClient[128];
+
+	szBuffer[0] = '\0';
+	strcpy(szBuffer, key);
+	std::list<C_GameObject*>::iterator	i;
+	for (i = m_list.begin(); i != m_list.end(); ++i) {
+		sprintf_s(szClient, 128, "%d:%.2f:%.2f;", (*i)->m_id, (*i)->xPos, (*i)->yPos);
+		strcat_s(szBuffer, 2048, szClient);
+	}
+	return szBuffer;
 }
