@@ -1,4 +1,0 @@
-D:\Michael\Downloads\unityserver_vs2019\Debug\netconnection_tcp_udp.exe
-D:\Michael\Downloads\unityserver_vs2019\Debug\netconnection_tcp_udp.pdb
-D:\Michael\Documents\Unity\Connection\Debug\netconnection_tcp_udp.exe
-D:\Michael\Documents\Unity\Connection\Debug\netconnection_tcp_udp.pdb
