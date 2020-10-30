@@ -56,6 +56,21 @@ public class UDP_Receiver
 							float.Parse(id_x_y[2], GameManager.culture));
 					}
 				}
+				else if (returnData.IndexOf("pro") != -1)
+				{
+					Debug.Log(returnData);
+					returnData = returnData.Replace("pro:", string.Empty);
+					split = returnData.Split(';');
+					for (int p = 0; p < split.Length - 1; p++)
+					{
+						//New Projectiles
+						String[] id_x_y;
+						id_x_y = split[p].Split(':');
+						UpdateProjectilePositions(int.Parse(id_x_y[0]),
+						float.Parse(id_x_y[1], GameManager.culture),
+						float.Parse(id_x_y[2], GameManager.culture));
+					}
+				}
 				else if (returnData.IndexOf("time:") != -1)
                 {
 					split = returnData.Split(':');
@@ -72,10 +87,8 @@ public class UDP_Receiver
 
 	void UpdateEnemyPosition(float xPos, float yPos)
     {
-		
 		GameManager.enemy.pos.x = xPos;
 		GameManager.enemy.pos.y = yPos;
-
 	}
 
 
@@ -106,4 +119,19 @@ public class UDP_Receiver
 		}
 		return false;
     }
+
+	void UpdateProjectilePositions(int id, float xPos, float yPos)
+	{
+		foreach (Projectile p in GameManager.Projectiles)
+		{
+			p.pos.x = xPos;
+			p.pos.y = yPos;
+			p.pos.z = 0;
+			if (p.pos.y < -10f)
+			{
+				GameManager.Projectiles.Remove(p);
+				break;
+			}
+		}
+	}
 }

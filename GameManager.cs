@@ -13,12 +13,11 @@ public class GameManager : MonoBehaviour
 {
 	public static int playerID = -1;
 	public static float SessionTimeSeconds = 0;
-	public GameObject LocalPlayer, OtherPlayer;
+	public GameObject LocalPlayer, OtherPlayer, ProjectilePrefab;
 	static Player local = new Player(playerID, 0, 0);
 	public static List<Player> AllPlayers = new List<Player>();
-	public static List<SceneObject> SceneObjects = new List<SceneObject>();
+	public static List<Projectile> Projectiles = new List<Projectile>();
 	public static Enemy enemy;
-	//public float enemyRange = 6f, enemySpeed = 3.7f;
 	public static CultureInfo culture = (CultureInfo)CultureInfo.CurrentCulture.Clone();
 	UDP_Connection udpConn;
 	TCP_Connection tcpConn;
@@ -32,7 +31,7 @@ public class GameManager : MonoBehaviour
 		if (LocalPlayer == null)
 			LocalPlayer = GameObject.FindWithTag("PlayerLocal");
 
-		GameManager.enemy = new Enemy(0, 0);
+		GameManager.enemy = new Enemy(0, -4);
 		enemy.sceneObject = GameObject.FindGameObjectWithTag("Enemy");
 
 		tcpConn.Send("login:"+ playerID);
@@ -49,17 +48,19 @@ public class GameManager : MonoBehaviour
 		local.id = GameManager.playerID;
 		Vector3 v = local.pos;
 
-		CheckMovementInput(v);
+		CheckInput(v);
 	}
 
     void FixedUpdate()
     {
+		//moving objects according to server data
 		MoveLocalPlayer();
 		MoveOtherPlayers();
+		MoveProjectiles();
 		MoveEnemy();
 	}
 
-	private void CheckMovementInput(Vector3 v)
+	private void CheckInput(Vector3 v)
     {
 		if (Input.GetKey(KeyCode.LeftArrow) || Input.GetKey(KeyCode.A))
 		{
@@ -81,12 +82,39 @@ public class GameManager : MonoBehaviour
 			v.y -= 0.1f * Player.speed;
 			SendPosition(v.x, v.y);
 		}
+		if (Input.GetKeyDown(KeyCode.Space))
+		{
+			if (local.bCanShoot)
+			{
+				StartCoroutine(SetCooldown());
+				local.bCanShoot = false;
+				SendProjectile(v.x, v.y);
+			}
+		}
 	}
 
 	private void SendPosition(float xPos, float yPos) 
 	{
 		if (playerID > -1)
 			udpConn.Send("pos:" + playerID + ":" + xPos + ":" + yPos + "\r\n");
+	}
+
+	private void SendProjectile(float xPos, float yPos)
+	{
+		if (playerID > -1) 
+		{
+			udpConn.Send("pro:" + playerID + ":" + xPos + ":" + yPos + "\r\n");
+			Projectile newProjectile = new Projectile(playerID, xPos, yPos);
+			Projectiles.Add(newProjectile);
+			GameObject go = Instantiate(ProjectilePrefab, new Vector3(xPos, yPos, 0), Quaternion.identity);
+			newProjectile.sceneObject = go;
+		}
+	}
+
+	IEnumerator SetCooldown()
+	{
+		yield return new WaitForSeconds(Player.attackCooldown);
+		local.bCanShoot = true;
 	}
 
 	private void SetEnemy() 
@@ -125,18 +153,29 @@ public class GameManager : MonoBehaviour
 			{
 				if (p.sceneObject == null)
 				{
-					CreateGhostPlayerSprite(p);
+					CreateGhost(p, OtherPlayer);
 				}
 				p.sceneObject.transform.position = p.pos;
 			}
 		}
 	}
 
-	void CreateGhostPlayerSprite(Player p) 
+	void MoveProjectiles()
 	{
-		p.sceneObject = Instantiate(OtherPlayer, p.pos, Quaternion.identity);
-		(p.sceneObject.GetComponent<SpriteRenderer>()).color = new Color(1, 1, 1, 0.75f);
+		foreach (Projectile p in Projectiles)
+		{
+			if (p.sceneObject == null)
+				CreateGhost(p, ProjectilePrefab);
+			p.sceneObject.transform.position = p.pos;
+		}
 	}
+
+	void CreateGhost(SceneObject s, GameObject prefab) 
+	{
+		s.sceneObject = Instantiate(prefab, s.pos, Quaternion.identity);
+		(s.sceneObject.GetComponent<SpriteRenderer>()).color = new Color(1, 1, 1, 0.75f);
+	}
+
 
 	void OnApplicationQuit()
 	{
