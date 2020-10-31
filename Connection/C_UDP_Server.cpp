@@ -2,6 +2,7 @@
 #include "C_GameObject.h"
 #include "C_Session.h"
 #include <iostream>
+#include <stdlib.h>
 #include <list>
 #include <string>
 #include <clocale>
@@ -96,40 +97,39 @@ void C_UDP_Server::ThreadProcess()
 		nResult = recvfrom(Server, szBuffer, sizeof(szBuffer), 0, (struct sockaddr*)&sender, &nSize);
 		if (nResult > 0) {
 			if (nResult < 256) szBuffer[nResult] = '\0';
-			//cout << szBuffer;
-			std::list<C_GameObject*>::iterator	i_object;
+			
+				std::list<C_GameObject*>::iterator	i_object;
 
-			//id requests
-			if (strstr(szBuffer, "id:") != NULL) {
-				for (i_object = m_Session->m_list_SessionPlayers.begin(); i_object != m_Session->m_list_SessionPlayers.end(); ++i_object) {
-					if (atoi((char*)&szBuffer[3]) == (*i_object)->m_id) {
-						(*i_object)->udp_sender = sender;
+				//id requests - beggining of session
+				if (strstr(szBuffer, "id:") != NULL) {
+					for (i_object = m_Session->m_list_SessionPlayers.begin(); i_object != m_Session->m_list_SessionPlayers.end(); ++i_object) {
+						if (atoi((char*)&szBuffer[3]) == (*i_object)->m_id) {
+							(*i_object)->udp_sender = sender;
+						}
 					}
 				}
-			}
 
-			//position requests
-			else if (strstr(szBuffer, "pos:") != NULL) {
-				char* szFirst = strstr(szBuffer, ":");
-				char* szSec = strstr(szFirst + 1, ":");
-				szSec[0] = '\0';
-				int id = atoi(szFirst + 1);
+				//position requests - continous
+				else if (strstr(szBuffer, "pos:") != NULL) {
+					char* szFirst = strstr(szBuffer, ":");
+					char* szSec = strstr(szFirst + 1, ":");
+					szSec[0] = '\0';
+					int id = atoi(szFirst + 1);
 
-				//update position for requested id
-				for (i_object = m_Session->m_list_SessionPlayers.begin(); i_object != m_Session->m_list_SessionPlayers.end(); ++i_object) {
-					if (id == (*i_object)->m_id) {
-						szSec++;
-						szFirst = strstr(szSec, ":");
-						szFirst[0] = '\0';
+					for (i_object = m_Session->m_list_SessionPlayers.begin(); i_object != m_Session->m_list_SessionPlayers.end(); ++i_object) {
+						if (id == (*i_object)->m_id) {
+							szSec++;
+							szFirst = strstr(szSec, ":");
+							szFirst[0] = '\0';
 
-						(*i_object)->xPos = atof(szSec);
-						(*i_object)->yPos = atof(szFirst+1);
-						break;
+							(*i_object)->xPos = atof(szSec);
+							(*i_object)->yPos = atof(szFirst+1);
+							break;
+						}
 					}
 				}
-			}
 
-			//projectile requests
+			//projectile position requests - continous
 			else if (strstr(szBuffer, "pro:") != NULL) {
 				char* szFirst = strstr(szBuffer, ":");
 				char* szSec = strstr(szFirst + 1, ":");
@@ -152,11 +152,15 @@ void C_UDP_Server::ThreadProcess()
 void C_UDP_Server::TimerProcess()
 {
 	if (m_Session->m_list_SessionPlayers.size() > 0)
-		
 		new std::thread(&C_UDP_Server::SendPositions, this);
 
 	if (m_Session->m_enemy->isAlive)
 		new std::thread(&C_UDP_Server::SendEnemyPosition, this);
+
+	//5% chance of spawning an enemy projectile in each call of TimeProcess()
+	if (rand() % 20 == 0) {
+		m_Session->CreateEnemyProjectile();
+	}
 
 	if (m_Session->m_list_Projectiles.size() > 0)
 		new std::thread(&C_UDP_Server::SendProjectilePositions, this);
@@ -187,14 +191,17 @@ void C_UDP_Server::SendEnemyPosition(void)
 
 void C_UDP_Server::SendProjectilePositions(void)
 {
+	char szBuffer[128];
+
 	std::list<C_GameObject*>::iterator	i;
 	for (i = m_Session->m_list_Projectiles.begin(); i != m_Session->m_list_Projectiles.end(); ++i) {
-		if ((*i)->yPos < -10.f)
+		if ((*i)->yPos < -10.f || (*i)->yPos > 10.f)
 		{
+			//pop_front() only possible due to the same speed
 			m_Session->m_list_Projectiles.pop_front();
 			break;
 		}
-		(*i)->yPos -= (*i)->speed*0.1f;
+		(*i)->yPos += (*i)->speed*0.1f;
 	}
 	SendToAllClients(GetDataListAsChar("pro:", m_Session->m_list_Projectiles));
 }

@@ -12,7 +12,6 @@ C_TCP_Recv_Thread::C_TCP_Recv_Thread(C_TCP_Server* pServer, SOCKET Client)
 
 void C_TCP_Recv_Thread::ThreadProcess()
 {
-	// Reading
 	char szBuffer[1024];
 	ZeroMemory(&szBuffer, sizeof(szBuffer));
 
@@ -20,8 +19,6 @@ void C_TCP_Recv_Thread::ThreadProcess()
 		int nResult = recv(m_Client, szBuffer, 1023, 0);
 
 		if (nResult > 0) {
-			//std::cout << "receivedMessage: " << szBuffer << "\n";
-
 			if (strstr(szBuffer, "login:") != NULL)
 				m_pServer->Login(szBuffer);
 			else if (strstr(szBuffer, "dead:") != NULL)

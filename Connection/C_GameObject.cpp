@@ -23,5 +23,5 @@ C_GameObject::C_GameObject(int nID, ObjectType m_type)
 		speed = 1;
 	}
 	else if (m_type == ObjectType::Projectile)
-		speed = 2;
+		speed = -2;
 }

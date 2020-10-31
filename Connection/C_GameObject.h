@@ -2,9 +2,16 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 
-enum ObjectType {Enemy, Player, Obstacle, Projectile, Other};
+enum ObjectType {Enemy, Player, Projectile};
 
 class C_GameObject{
+
+	/*
+	* m_id: 
+		0-9: Players 1-10;
+		10 / E: Enemy
+		ObjectType::Projectiles are possessive (e.g. projectiles with id:10 belong to Enemy)
+	*/
 
 public:
 	int		m_id;

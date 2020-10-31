@@ -29,5 +29,4 @@ public:
 	bool Login(char* szBuffer);
 	bool CheckPlayerID(char* szBuffer);
 	bool SetDead(char* szBuffer);
-	bool Logout(char* szBuffer);
 };

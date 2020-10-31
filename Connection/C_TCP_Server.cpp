@@ -71,6 +71,7 @@ void C_TCP_Server::ThreadProcess()
 
 }
 
+//automatically on connect of each client
 bool C_TCP_Server::Login(char* szBuffer)
 {
 	const std::lock_guard<std::mutex> lock(m_Mutex);
@@ -81,6 +82,7 @@ bool C_TCP_Server::Login(char* szBuffer)
 	return true;
 }
 
+//checking whether player id already exists in this server session
 bool C_TCP_Server::CheckPlayerID(char* szBuffer)
 {
 	szBuffer[strlen(szBuffer) - 2] = '\0';
@@ -94,25 +96,44 @@ bool C_TCP_Server::CheckPlayerID(char* szBuffer)
 	return true;
 }
 
+//set Enemy or any player to alive = false, triggered by collisions in Unity (client) 
 bool C_TCP_Server::SetDead(char* szBuffer)
 {
 	char szDead[24];
 	char* deadObject;
 
+	//if enemy is dead
 	if (strstr(szBuffer, "E") != NULL)
 	{
 		deadObject = "E";
 		m_Session->m_enemy->isAlive = false;
+
+		sprintf(szDead, "dead:%s", deadObject);
+		const std::lock_guard<std::mutex> lock(m_Mutex);
+		send(Client, szDead, strlen(szDead), 0);
 	}
-	else if (atoi)
-		deadObject = "";
-	
-	
-	sprintf(szDead, "dead:%s", deadObject);
-	const std::lock_guard<std::mutex> lock(m_Mutex);
-	send(Client, szDead, strlen(szDead), 0);
+
+	//if any player is dead
+	//rwading player id doesn't work for whatever reason yet
+	/*else if (strstr(szBuffer, "P") != NULL)
+	{
+		char* szFirst = strstr(szBuffer, ":");
+		char* szSec = strstr(szFirst + 1, ":");
+		szSec[0] = '\0';
+		szSec++;
+		szFirst = strstr(szSec, ":");
+
+		
+		std::list<C_GameObject*>::iterator	i;
+		for (i = m_Session->m_list_SessionPlayers.begin(); i != m_Session->m_list_SessionPlayers.end(); ++i)
+		{
+			if (strstr(szBuffer, szFirst+1) != NULL)
+			{
+				(*i)->isAlive = false;
+				deadObject = (szFirst+1);
+			}
+		}
+	}*/
+
 	return true;
 }
-
-
-bool C_TCP_Server::Logout(char* szBuffer) { return true; }
