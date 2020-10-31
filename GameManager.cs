@@ -19,8 +19,8 @@ public class GameManager : MonoBehaviour
 	public static List<Projectile> Projectiles = new List<Projectile>();
 	public static Enemy enemy;
 	public static CultureInfo culture = (CultureInfo)CultureInfo.CurrentCulture.Clone();
-	UDP_Connection udpConn;
-	TCP_Connection tcpConn;
+	public UDP_Connection udpConn;
+	public TCP_Connection tcpConn;
 
 	void Start()
 	{

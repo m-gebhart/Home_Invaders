@@ -47,6 +47,10 @@ public class TCP_Receiver
 					SetPlayerID(Int32.Parse(split[1]));
 					udpConn.Send("id:" + GameManager.playerID);
 				}
+				else if (returnData.IndexOf("dead:") != -1)
+				{
+					SetDead(returnData);
+				}
 			}
 			catch (Exception e)
 			{
@@ -61,5 +65,9 @@ public class TCP_Receiver
 		GameManager.playerID = init_id;
 	}
 
-	void SetPlayerLives(int init_id){}
+	void SetDead(string dyingObject)
+	{
+		if (dyingObject.EndsWith("E"))
+			GameManager.enemy.bIsAlive = false;
+	}
 };

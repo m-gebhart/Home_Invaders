@@ -33,9 +33,9 @@ public class UDP_Receiver
 				String[] split;
 				Byte[] receiveBytes = udpSocket.Receive(ref RemoteIpEndPoint);
 				string returnData = System.Text.Encoding.ASCII.GetString(receiveBytes);
-					
+
 				//Debug.Log("UDP >> " + returnData);
-				if (returnData.IndexOf("pos:E") != -1) 
+				if (returnData.IndexOf("pos:E") != -1)
 				{
 					returnData = returnData.Replace("pos:E:", string.Empty);
 					split = returnData.Split(':');
@@ -46,19 +46,18 @@ public class UDP_Receiver
 				{
 					returnData = returnData.Replace("pos:", string.Empty);
 					split = returnData.Split(';');
-					for (int p = 0; p < split.Length-1; p++)
+					for (int p = 0; p < split.Length - 1; p++)
 					{
 						//New Player Ghosts
 						String[] id_x_y;
 						id_x_y = split[p].Split(':');
-							UpdatePlayerPosition(int.Parse(id_x_y[0]), 
-							float.Parse(id_x_y[1], GameManager.culture), 
-							float.Parse(id_x_y[2], GameManager.culture));
+						UpdatePlayerPosition(int.Parse(id_x_y[0]),
+						float.Parse(id_x_y[1], GameManager.culture),
+						float.Parse(id_x_y[2], GameManager.culture));
 					}
 				}
 				else if (returnData.IndexOf("pro") != -1)
 				{
-					Debug.Log(returnData);
 					returnData = returnData.Replace("pro:", string.Empty);
 					split = returnData.Split(';');
 					for (int p = 0; p < split.Length - 1; p++)
@@ -72,7 +71,7 @@ public class UDP_Receiver
 					}
 				}
 				else if (returnData.IndexOf("time:") != -1)
-                {
+				{
 					split = returnData.Split(':');
 					GameManager.SessionTimeSeconds = float.Parse(split[1], GameManager.culture);
 				}
