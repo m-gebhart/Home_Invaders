@@ -107,33 +107,31 @@ bool C_TCP_Server::SetDead(char* szBuffer)
 	{
 		deadObject = "E";
 		m_Session->m_enemy->isAlive = false;
-
-		sprintf(szDead, "dead:%s", deadObject);
-		const std::lock_guard<std::mutex> lock(m_Mutex);
-		send(Client, szDead, strlen(szDead), 0);
 	}
 
 	//if any player is dead
-	//rwading player id doesn't work for whatever reason yet
-	/*else if (strstr(szBuffer, "P") != NULL)
+	//DPESN'T WORK FOR WHATEVER REASON
+	/*else
 	{
 		char* szFirst = strstr(szBuffer, ":");
 		char* szSec = strstr(szFirst + 1, ":");
 		szSec[0] = '\0';
 		szSec++;
-		szFirst = strstr(szSec, ":");
 
-		
 		std::list<C_GameObject*>::iterator	i;
 		for (i = m_Session->m_list_SessionPlayers.begin(); i != m_Session->m_list_SessionPlayers.end(); ++i)
 		{
-			if (strstr(szBuffer, szFirst+1) != NULL)
+			if ((*i)->m_id == atoi(szSec));
 			{
 				(*i)->isAlive = false;
-				deadObject = (szFirst+1);
+				deadObject = szSec;
 			}
 		}
 	}*/
+
+	sprintf(szDead, "dead:%s", deadObject);
+	const std::lock_guard<std::mutex> lock(m_Mutex);
+	send(Client, szDead, strlen(szDead), 0);
 
 	return true;
 }
