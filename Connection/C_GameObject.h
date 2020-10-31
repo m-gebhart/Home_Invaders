@@ -11,6 +11,7 @@ public:
 	float	xPos, yPos, movementRange = 0.f, speed = 0.f;
 	ObjectType m_type;
 	struct sockaddr_in udp_sender;
+	bool isAlive = true;
 
 public:
 	C_GameObject();

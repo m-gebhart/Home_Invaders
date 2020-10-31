@@ -23,9 +23,9 @@ void C_TCP_Recv_Thread::ThreadProcess()
 			//std::cout << "receivedMessage: " << szBuffer << "\n";
 
 			if (strstr(szBuffer, "login:") != NULL)
-				m_pServer->Login(szBuffer);	
-			else if (strstr(szBuffer, "lives:") != NULL)
-				m_pServer->CheckPlayerLives(szBuffer);
+				m_pServer->Login(szBuffer);
+			else if (strstr(szBuffer, "dead:") != NULL)
+				m_pServer->SetDead(szBuffer);
 		}
 	} while (true);
 }

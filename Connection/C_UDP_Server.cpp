@@ -109,7 +109,7 @@ void C_UDP_Server::ThreadProcess()
 			}
 
 			//position requests
-			if (strstr(szBuffer, "pos:") != NULL) {
+			else if (strstr(szBuffer, "pos:") != NULL) {
 				char* szFirst = strstr(szBuffer, ":");
 				char* szSec = strstr(szFirst + 1, ":");
 				szSec[0] = '\0';
@@ -130,7 +130,7 @@ void C_UDP_Server::ThreadProcess()
 			}
 
 			//projectile requests
-			if (strstr(szBuffer, "pro:") != NULL) {
+			else if (strstr(szBuffer, "pro:") != NULL) {
 				char* szFirst = strstr(szBuffer, ":");
 				char* szSec = strstr(szFirst + 1, ":");
 				szSec[0] = '\0';
@@ -151,10 +151,17 @@ void C_UDP_Server::ThreadProcess()
 
 void C_UDP_Server::TimerProcess()
 {
+	if (m_Session->m_list_SessionPlayers.size() > 0)
+		
+		new std::thread(&C_UDP_Server::SendPositions, this);
+
+	if (m_Session->m_enemy->isAlive)
+		new std::thread(&C_UDP_Server::SendEnemyPosition, this);
+
+	if (m_Session->m_list_Projectiles.size() > 0)
+		new std::thread(&C_UDP_Server::SendProjectilePositions, this);
+
 	new std::thread(&C_UDP_Server::SendServerTime, this);
-	new std::thread(&C_UDP_Server::SendPositions, this);
-	new std::thread(&C_UDP_Server::SendEnemyPosition, this);
-	new std::thread(&C_UDP_Server::SendProjectilePositions, this);
 }
 
 void C_UDP_Server::SendPositions(void)
@@ -200,7 +207,7 @@ void C_UDP_Server::SendServerTime(void)
 	m_Session->time_current = std::chrono::high_resolution_clock::now();
 	m_Session->time_passed = std::chrono::duration_cast<std::chrono::duration<float>>(m_Session->time_current - m_Session->time_start).count();
 	sprintf_s(szBuffer, 128, "time:%.3f", m_Session->time_passed);
-	std::cout << "Server running for " << szBuffer << " seconds" << "\r";
+	//std::cout << "Server running for " << szBuffer << " seconds" << "\r";
 
 	SendToAllClients(szBuffer);
 }
@@ -229,8 +236,11 @@ const char* C_UDP_Server::GetDataListAsChar(const char* key, std::list<C_GameObj
 	strcpy(szBuffer, key);
 	std::list<C_GameObject*>::iterator	i;
 	for (i = m_list.begin(); i != m_list.end(); ++i) {
-		sprintf_s(szClient, 128, "%d:%.2f:%.2f;", (*i)->m_id, (*i)->xPos, (*i)->yPos);
-		strcat_s(szBuffer, 2048, szClient);
+		if ((*i)->isAlive) 
+		{
+			sprintf_s(szClient, 128, "%d:%.2f:%.2f;", (*i)->m_id, (*i)->xPos, (*i)->yPos);
+			strcat_s(szBuffer, 2048, szClient);
+		}
 	}
 	return szBuffer;
 }

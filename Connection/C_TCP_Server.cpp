@@ -2,6 +2,7 @@
 #include "C_GameObject.h"
 #include "C_Session.h"
 #include "C_TCP_Recv_Thread.h"
+#include <iostream>
 
 C_TCP_Server::C_TCP_Server()
 {
@@ -72,6 +73,7 @@ void C_TCP_Server::ThreadProcess()
 
 bool C_TCP_Server::Login(char* szBuffer)
 {
+	const std::lock_guard<std::mutex> lock(m_Mutex);
 	if (m_Session->playerCount < 10)
 		CheckPlayerID(szBuffer);
 	else
@@ -83,7 +85,6 @@ bool C_TCP_Server::CheckPlayerID(char* szBuffer)
 {
 	szBuffer[strlen(szBuffer) - 2] = '\0';
 
-	const std::lock_guard<std::mutex> lock(m_Mutex);
 	m_Session->playerCount++;
 	C_GameObject* pPlayer = new C_GameObject(m_Session->playerCount - 1, Player);
 	m_Session->m_list_SessionPlayers.push_back(pPlayer);
@@ -93,11 +94,25 @@ bool C_TCP_Server::CheckPlayerID(char* szBuffer)
 	return true;
 }
 
-
-bool C_TCP_Server::Logout(char* szBuffer) { return true; }
-
-
-bool C_TCP_Server::CheckPlayerLives(char* szBuffer)
+bool C_TCP_Server::SetDead(char* szBuffer)
 {
+	char szDead[24];
+	char* deadObject;
+
+	if (strstr(szBuffer, "E") != NULL)
+	{
+		deadObject = "E";
+		m_Session->m_enemy->isAlive = false;
+	}
+	else if (atoi)
+		deadObject = "";
+	
+	
+	sprintf(szDead, "dead:%s", deadObject);
+	const std::lock_guard<std::mutex> lock(m_Mutex);
+	send(Client, szDead, strlen(szDead), 0);
 	return true;
 }
+
+
+bool C_TCP_Server::Logout(char* szBuffer) { return true; }
