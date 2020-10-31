@@ -193,7 +193,7 @@ public class GameManager : MonoBehaviour
 	public void LocalPlayerDie() 
 	{
 		local.bIsAlive = false;
-		tcpConn.Send("dead:P:"+playerID + "\r\n");
+		tcpConn.Send("dead:"+playerID + "\r\n");
 	}
 
 
