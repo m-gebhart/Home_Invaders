@@ -41,12 +41,15 @@ public class TCP_Receiver
 
 				//Debug.Log("TCP >>" + returnData);
 
+				//receiving ip requests
 				if (returnData.IndexOf("id") != -1)
 				{
 					split = returnData.Split(':');
 					SetPlayerID(Int32.Parse(split[1]));
 					udpConn.Send("id:" + GameManager.playerID);
 				}
+
+				//receiving 'enemy or player is dead' requests
 				else if (returnData.IndexOf("dead:") != -1)
 				{
 					SetDead(returnData);
@@ -65,9 +68,20 @@ public class TCP_Receiver
 		GameManager.playerID = init_id;
 	}
 
+	//Set either enemy E or Player with id to isAlive = false
 	void SetDead(string dyingObject)
 	{
 		if (dyingObject.EndsWith("E"))
 			GameManager.enemy.bIsAlive = false;
+
+		else if (dyingObject.IndexOf(":P:") != -1)
+        {
+			int id = dyingObject[dyingObject.Length - 1];
+			foreach (Player p in GameManager.AllPlayers) 
+			{
+				if (p.id == id)
+					p.bIsAlive = false;
+			}
+        }
 	}
 };

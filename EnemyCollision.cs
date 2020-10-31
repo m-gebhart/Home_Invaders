@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 public class EnemyCollision : MonoBehaviour
 {
@@ -8,16 +9,19 @@ public class EnemyCollision : MonoBehaviour
     {
         if (other.gameObject.tag == "PlayerProjectile")
         {
-            Destroy(other);
-            Die();
+            GameManager manager = (GameObject.Find("/GameManager")).gameObject.GetComponent<GameManager>();
+            if (manager != null)
+            {
+                if (other.gameObject.name[0] == GameManager.playerID)
+                { 
+                    manager.Win();
+                    manager.tcpConn.Send("dead:E");
+                }
+                Destroy(other);
+                (this.gameObject.GetComponent<Animator>()).Play("EnemyDestroy");
+                StartCoroutine(Fade());
+            }
         }
-    }
-
-    private void Die()
-    {
-        (GameObject.Find("/GameManager")).gameObject.GetComponent<GameManager>().tcpConn.Send("dead:E");
-        (this.gameObject.GetComponent<Animator>()).Play("EnemyDestroy");
-        StartCoroutine(Fade());
     }
 
     private IEnumerator Fade() 

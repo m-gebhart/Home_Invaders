@@ -15,7 +15,7 @@ public class SpriteAnimator : MonoBehaviour
         renderer = this.gameObject.GetComponent<SpriteRenderer>();
     }
 
-    void Update()
+    void FixedUpdate()
     {
         if (universalDelay < Time.deltaTime && !isPlaying)
         {
@@ -24,6 +24,7 @@ public class SpriteAnimator : MonoBehaviour
         }
     }
 
+    //done via script, not with animator, due to player anims being in sync
     IEnumerator AnimateSprite()
     {
         this.enabled = false;
@@ -38,4 +39,5 @@ public class SpriteAnimator : MonoBehaviour
             baseSpriteDisplayed = !baseSpriteDisplayed;
         } while (true);
     }
+
 }

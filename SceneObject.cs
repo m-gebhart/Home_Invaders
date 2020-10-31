@@ -5,7 +5,8 @@ using UnityEngine;
 
 public class SceneObject
 {
-    public Vector3 pos;
+	public int id;
+	public Vector3 pos;
     public GameObject sceneObject;
 
 	public SceneObject(float xPos, float yPos)
